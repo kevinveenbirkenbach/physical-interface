@@ -6,10 +6,17 @@
 #include <DHT.h>
 #include "config.h"
 
-// Setup ritter actor
+// Setup pins
 const int pin_ritter = 13;
+const int pin_pir  = 14;
+const int pin_tmp  = 12;
 const unsigned long ritter_group_address = 13043702;
+
+// Setup classes
+ESP8266WebServer server ( 80 );
 NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
+DHT dht(pin_tmp, DHT11);
+
 
 // Switchs the whole group on
 void setRitterGroup(int state)
@@ -33,32 +40,38 @@ void setRitterSwitch(int unit, int state)
   Serial.println("\".");
 }
 
-// Setup DHT sensor
-const int pin_tmp  = 12;
-DHT dht(pin_tmp, DHT11);
-
 String getJsonDht(void){
   return "{\"temperature\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
 }
-
-// Setup pin für PIR
-const int pin_pir  = 14;
-pinMode(pin_pir, INPUT);
 
 String getJsonPir(void){
   return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"";
 }
 
 String getJson(void){
-  return "{\"DHT\":"+String(digitalRead(pirPin))+",\"PIR\":"+String(digitalRead(pirPin))+"}";
+  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+"}";
 }
 
-// Setup webserver
-ESP8266WebServer server ( 80 );
+void handleRequest(void){
+  if(server.arg("plug_id") && server.arg("status")){
+    if(server.arg("plug_id")=="group"){
+      setRitterGroup(server.arg("status").toInt());
+    }else{
+      setRitterSwitch(server.arg("plug_id").toInt(),server.arg("status").toInt());
+    }
+  }
+  if(server.arg("format")=="json"){
+    server.send ( 200, "text/html", getJson());
+  }else{
+    server.send ( 200, "text/html", homepage);
+  }
+  delay(100);
+}
 
 //Arduino-Setup
 void setup(void)
 {
+  pinMode(pin_pir, INPUT);
   Serial.begin(115200);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
@@ -79,17 +92,5 @@ void setup(void)
 
 void loop()
 {
-  if(server.arg("switch") && server.arg("value")){
-    if(server.arg("switch")=="group"){
-      setRitterGroup(server.arg("value").toInt());
-    }else{
-      setRitterSwitch(server.arg("switch").toInt(),server.arg("value").toInt());
-    }
-  }
-  if(server.arg("mode")=="json"){
-    server.send ( 200, "text/html", getJson());
-  }else{
-    server.send ( 200, "text/html", "<html><head><title>Physical Interface</title></head><body>Please check out the <a href=\"https://github.com/kevinveenbirkenbach/physical-interface\">git-repository</a> to get more information about this software.<body><html>");
-  }
-  delay(100);
+  server.handleClient();
 }

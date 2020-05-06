@@ -4,8 +4,14 @@
 
 Software to build up an REST-API on an Arduino based microcontroller, to interact with hardware and the physical environment.
 
-## Todo
-- Implement support for Arduino
+## Setup
+
+First update the necessary software via typing in:
+
+```bash
+bash ./scripts/library-update.sh
+bash ./scripts/board-update.sh
+```
 
 ## License
 The ["GNU AFFERO GENERAL PUBLIC LICENSE"](./LICENSE.txt) applies to this project.

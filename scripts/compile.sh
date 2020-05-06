@@ -3,7 +3,7 @@
 # This script compiles the program
 
 # set variables
-ARDUINO_PATH="$HOME/.local/share/umake/ide/arduino/arduino";
+ARDUINO_PATH="/bin/arduino";
 
 # test preconditions
 if [ ! -f "$ARDUINO_PATH" ]
