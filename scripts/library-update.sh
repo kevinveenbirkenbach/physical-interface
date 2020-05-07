@@ -37,4 +37,5 @@ pullOrClone(){
   pullOrClone "Adafruit_Sensor" "https://github.com/adafruit/Adafruit_Sensor";
   pullOrClone "DHT-sensor-library" "https://github.com/adafruit/DHT-sensor-library";
   pullOrClone "NewRemoteSwitch" "https://github.com/1technophile/NewRemoteSwitch";
+  pullOrClone "IRremoteESP8266" "https://github.com/crankyoldgit/IRremoteESP8266";
 )

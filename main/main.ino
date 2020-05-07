@@ -4,6 +4,7 @@
 #include <ESP8266mDNS.h>
 #include <NewRemoteTransmitter.h>
 #include <DHT.h>
+#include <IRremote.h>
 #include "config.h"
 
 // Setup pins
