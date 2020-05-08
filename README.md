@@ -28,6 +28,7 @@ The following links can be helpful for maintaining this code and understanding t
 ##### IR-Reciever
 - https://www.elecrow.com/download/Infrared%20receiver%20vs1838b.pdf
 
+#### Software
 
 #### IR
 - https://github.com/crankyoldgit/IRremoteESP8266
@@ -35,7 +36,8 @@ The following links can be helpful for maintaining this code and understanding t
 - https://daniel-ziegler.com/arduino/esp/mikrocontroller/2017/07/28/arduino-universalfernbedienung/
 - https://www.instructables.com/id/Universal-Remote-Using-ESP8266Wifi-Controlled/
 
-#### Serial Monitor
+#### Serial Communication
+- https://playground.arduino.cc/Interfacing/LinuxTTY/
 
 ## License
 The ["GNU AFFERO GENERAL PUBLIC LICENSE"](./LICENSE.txt) applies to this project.
