@@ -4,6 +4,7 @@
 
 # set variables
 ARDUINO_PATH="/bin/arduino";
+MAIN_FILE="$(dirname "$(readlink -f "${0}")")/../main/main.ino"
 
 # test preconditions
 if [ ! -f "$ARDUINO_PATH" ]
@@ -13,4 +14,5 @@ then
   echo "https://askubuntu.com/questions/1025753/how-to-install-latest-arduino-ide"
   exit 1;
 fi
-bash "$ARDUINO_PATH" --upload ../main/main.ino
+echo "Compiling $MAIN_FILE..."
+bash "$ARDUINO_PATH" --upload "$MAIN_FILE"
