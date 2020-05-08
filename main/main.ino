@@ -1,15 +1,3 @@
-
-/*
- * IRremoteESP8266: IRrecvDump - dump details of IR codes with IRrecv
- * An IR detector/demodulator must be connected to the input RECV_PIN.
- * Version 0.1 Sept, 2015
- * Based on Ken Shirriff's IrsendDemo Version 0.1 July, 2009,
- * Copyright 2009 Ken Shirriff, http://arcfn.com
- * JVC and Panasonic protocol added by Kristian Lauszus
- *   (Thanks to zenwheel and other people at the original blog post)
- * LG added by Darryl Smith (based on the JVC protocol)
- */
-
 #ifndef UNIT_TEST
 #include <Arduino.h>
 #endif
@@ -24,17 +12,21 @@
 #include <DHT.h>
 #include "config.h"
 
-// an IR detector/demodulator is connected to GPIO pin 2
-uint16_t RECV_PIN = 2;
+// Define Constants
+const int pin_ritter = 13;
+const int pin_pir  = 14;
+const int pin_tmp  = 12;
+const uint16_t pin_ir_reciever = 2;
+const unsigned long ritter_group_address = 13043702;
 
-IRrecv irrecv(RECV_PIN);
-
+// Define variables
 decode_results results;
 
-void setup() {
-  Serial.begin(9600);
-  irrecv.enableIRIn();  // Start the receiver
-}
+// Setup classes
+ESP8266WebServer server ( 80 );
+NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
+DHT dht(pin_tmp, DHT11);
+IRrecv irrecv(pin_ir_reciever);
 
 String getDecodeType(decode_results *results){
   switch(results->decode_type){
@@ -88,35 +80,6 @@ void dump(decode_results *results) {
   }
   Serial.println();
 }
-
-void loop() {
-  if (irrecv.decode(&results)) {
-    dump(&results);
-    irrecv.resume();  // Receive the next value
-  }
-}
-
-///////////////////////////
-// #include <ESP8266WiFi.h>
-// #include <WiFiClient.h>
-// #include <ESP8266WebServer.h>
-// #include <ESP8266mDNS.h>
-// #include <NewRemoteTransmitter.h>
-// #include <DHT.h>
-// #include <IRremote.h>
-// #include "config.h"
-//
-// Setup pins
-const int pin_ritter = 13;
-const int pin_pir  = 14;
-const int pin_tmp  = 12;
-const unsigned long ritter_group_address = 13043702;
-
-// Setup classes
-ESP8266WebServer server ( 80 );
-NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
-DHT dht(pin_tmp, DHT11);
-
 
 // Switchs the whole group on
 void setRitterGroup(int state)
@@ -172,7 +135,7 @@ void handleRequest(void){
 void setup(void)
 {
   pinMode(pin_pir, INPUT);
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
   WiFi.begin(ssid, password);
@@ -187,10 +150,16 @@ void setup(void)
   server.onNotFound(handleRequest);
   server.begin();
   Serial.println("HTTP server started.");
+  Serial.println("Enable IR-Reciever.");
+  irrecv.enableIRIn();
   delay(1000);
 }
 
 void loop()
 {
   server.handleClient();
+  if (irrecv.decode(&results)) {
+    dump(&results);
+    irrecv.resume();
+  }
 }
