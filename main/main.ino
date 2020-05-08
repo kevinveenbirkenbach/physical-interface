@@ -11,6 +11,7 @@
 #include <NewRemoteTransmitter.h>
 #include <DHT.h>
 #include "config.h"
+#include "homepage_template.h"
 
 // Define Constants
 const int pin_ritter = 13;
@@ -116,6 +117,7 @@ String getJson(void){
 }
 
 void handleRequest(void){
+  Serial.println("Website was called.");
   if(server.arg("plug_id") && server.arg("status")){
     if(server.arg("plug_id")=="group"){
       setRitterGroup(server.arg("status").toInt());
@@ -126,7 +128,7 @@ void handleRequest(void){
   if(server.arg("format")=="json"){
     server.send ( 200, "text/html", getJson());
   }else{
-    server.send ( 200, "text/html", homepage);
+    server.send ( 200, "text/html", homepage_template());
   }
   delay(100);
 }
