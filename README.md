@@ -24,6 +24,7 @@ The following links can be helpful for maintaining this code and understanding t
 ##### Transistor
 - https://www.elektronik-kompendium.de/sites/bau/0201291.htm
 - https://components101.com/transistors/s8050-transistor-pinout-equivalent-datasheet
+- https://cdn-reichelt.de/documents/datenblatt/A100/PN2222A-FSC.pdf
 
 ##### IR-Reciever
 - https://www.elecrow.com/download/Infrared%20receiver%20vs1838b.pdf

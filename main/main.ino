@@ -35,6 +35,7 @@ const char* parameter_plug_status="plug_status";
 const char* parameter_ir_type="ir_type";
 const char* parameter_ir_data="ir_data";
 const char* parameter_ir_bits="ir_bits";
+const char* parameter_list[]={parameter_plug_id,parameter_plug_status,parameter_ir_type,parameter_ir_data,parameter_ir_bits};
 
 // Define variables
 decode_results results;
@@ -125,7 +126,7 @@ void setRitterSwitch(int unit, int state)
 }
 
 void setIrColor(decode_type_t type,int data, int bits) {
-  // irsend.send(type, data, bits);
+  irsend.send(type, data, bits);
   Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\" was send in format \"" + getDecodeType(type) + "\".");
 }
 
