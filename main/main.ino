@@ -30,6 +30,11 @@ const int pin_tmp  = 12;
 const uint16_t pin_ir_reciever = 2;
 const uint16_t pin_ir_send = 4;
 const unsigned long ritter_group_address = 13043702;
+const char* parameter_plug_id="plug_id";
+const char* parameter_plug_status="plug_status";
+const char* parameter_ir_type="ir_type";
+const char* parameter_ir_data="ir_data";
+const char* parameter_ir_bits="ir_bits";
 
 // Define variables
 decode_results results;
@@ -115,7 +120,7 @@ void setRitterSwitch(int unit, int state)
 
 void setIrColor(decode_type_t type,int data, int bits) {
   // irsend.send(type, data, bits);
-  Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\"was send in format \"" + getDecodeType(type) + "\".");
+  Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\" was send in format \"" + getDecodeType(type) + "\".");
 }
 
 bool isParameterDefined(String parameter_name){
@@ -128,14 +133,14 @@ bool isParameterDefined(String parameter_name){
 }
 
 void controller(void){
-  if(isParameterDefined("ir_code") && isParameterDefined("ir_decode_type") && isParameterDefined("ir_data")){
-    setIrColor(static_cast<decode_type_t>(server.arg("ir_decode_type").toInt()),server.arg("ir_data").toInt(),server.arg("ir_bits").toInt());
+  if(isParameterDefined(parameter_ir_type) && isParameterDefined(parameter_ir_data) && isParameterDefined(parameter_ir_bits)){
+    setIrColor(static_cast<decode_type_t>(server.arg(parameter_ir_type).toInt()),server.arg(parameter_ir_data).toInt(),server.arg(parameter_ir_bits).toInt());
   }
-  if(isParameterDefined("plug_id") && isParameterDefined("status")){
-      if(server.arg("plug_id")=="group"){
-        setRitterGroup(server.arg("status").toInt());
+  if(isParameterDefined(parameter_plug_id) && isParameterDefined(parameter_plug_status)){
+      if(server.arg(parameter_plug_id)=="group"){
+        setRitterGroup(server.arg(parameter_plug_status).toInt());
       }else{
-        setRitterSwitch(server.arg("plug_id").toInt(),server.arg("status").toInt());
+        setRitterSwitch(server.arg(parameter_plug_id).toInt(),server.arg(parameter_plug_status).toInt());
       }
   }
 }
