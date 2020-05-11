@@ -1,16 +1,29 @@
 #ifndef UNIT_TEST
-#include <Arduino.h>
+  #include <Arduino.h>
 #endif
+
+// Infared
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
+#include <IRsend.h>
 #include <IRutils.h>
+
+// Web
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+
+// 433 Mhz
 #include <NewRemoteTransmitter.h>
+
+// Sensors
 #include <DHT.h>
+
+// Configuration
 #include "config.h"
+
+// Templates
 #include "homepage_template.h"
 
 // Define Constants
@@ -18,6 +31,7 @@ const int pin_ritter = 13;
 const int pin_pir  = 14;
 const int pin_tmp  = 12;
 const uint16_t pin_ir_reciever = 2;
+const uint16_t pin_ir_send = 4;
 const unsigned long ritter_group_address = 13043702;
 
 // Define variables
@@ -28,6 +42,7 @@ ESP8266WebServer server ( 80 );
 NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
 DHT dht(pin_tmp, DHT11);
 IRrecv irrecv(pin_ir_reciever);
+IRsend irsend(pin_ir_send);
 
 /**
  * Associative Arrays aren't possible in C++ because of Memory.
@@ -109,6 +124,11 @@ void setRitterSwitch(int unit, int state)
   Serial.println("\".");
 }
 
+void setIrColor() {
+  uint32_t code = strtoul(server.arg("code").c_str(), NULL, 10);
+  irsend.sendNEC(code, 32);
+}
+
 String getJsonDht(void){
   return "{\"temperature\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
 }
@@ -121,9 +141,18 @@ String getJson(void){
   return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+"}";
 }
 
+bool isParameterDefined(String parameter_name){
+  for (uint8_t parameter_index = 0; parameter_index < server.args(); parameter_index++) {
+    if(server.argName(parameter_index)==parameter_name){
+      return true;
+    }
+  }
+  return false;
+}
+
 void handleRequest(void){
   Serial.println("Website was called.");
-  if(server.arg("plug_id") && server.arg("status")){
+  if(isParameterDefined("plug_id") && isParameterDefined("status")){
     if(server.arg("plug_id")=="group"){
       setRitterGroup(server.arg("status").toInt());
     }else{
