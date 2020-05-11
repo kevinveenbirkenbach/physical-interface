@@ -38,6 +38,9 @@ const char* parameter_ir_bits="ir_bits";
 
 // Define variables
 decode_results results;
+decode_type_t last_recieved_ir_type;
+int last_recieved_ir_data;
+int last_recieved_ir_bits;
 
 // Setup classes
 ESP8266WebServer server ( 80 );
@@ -80,6 +83,9 @@ String getDecodeType(decode_type_t decode_type){
 }
 
 void dump(decode_results *results) {
+  last_recieved_ir_type = results->decode_type;
+  last_recieved_ir_data = results->value;
+  last_recieved_ir_bits = results->bits;
   uint16_t count = results->rawlen;
   Serial.print(getDecodeType(results->decode_type));
   serialPrintUint64(results->value, 16);
@@ -154,8 +160,12 @@ String getJsonPir(void){
   return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"}";
 }
 
+String getJsonIr(void){
+  return "{\"last_recieved\":{\"bits\":\""+String(last_recieved_ir_bits)+"\",\"type\":\""+String(last_recieved_ir_type)+"\",\"data\":\""+String(last_recieved_ir_data)+"\"}}";
+}
+
 String getJson(void){
-  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+"}";
+  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+"}";
 }
 
 #include "homepage_template.h"
@@ -187,10 +197,8 @@ void setup(void)
       Serial.print(".");
       delay(500);
   }
-  Serial.print("Connected to :");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("Connected to :" + String(ssid));
+  Serial.println("IP address: " + WiFi.localIP());
   server.onNotFound(handleRequest);
   server.begin();
   Serial.println("HTTP server started.");

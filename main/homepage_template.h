@@ -19,7 +19,7 @@ return
       "<h3>Remote Plug Controller<i class=\"fas fa-plug\"></i></h3>"
       "<form method=\"get\" >"
         "<div class=\"form-group\">"
-          "<label for=\""+ parameter_plug_id +"\">Plug-ID:</label>"
+          "<label for=\""+ parameter_plug_id +"\">"+ parameter_plug_id +":</label>"
           "<input type=\"number\" class= \"form-control\" id=\""+ parameter_plug_id +"\" name=\""+ parameter_plug_id +"\">"
         "</div>"
         "<div class=\"form-group\">"
