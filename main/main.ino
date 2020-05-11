@@ -23,9 +23,6 @@
 // Configuration
 #include "config.h"
 
-// Templates
-#include "homepage_template.h"
-
 // Define Constants
 const int pin_ritter = 13;
 const int pin_pir  = 14;
@@ -121,18 +118,6 @@ void setIrColor(decode_type_t type,int data, int bits) {
   Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\"was send in format \"" + getDecodeType(type) + "\".");
 }
 
-String getJsonDht(void){
-  return "{\"temperature\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
-}
-
-String getJsonPir(void){
-  return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"";
-}
-
-String getJson(void){
-  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+"}";
-}
-
 bool isParameterDefined(String parameter_name){
   for (uint8_t parameter_index = 0; parameter_index < server.args(); parameter_index++) {
     if(server.argName(parameter_index)==parameter_name){
@@ -154,6 +139,21 @@ void controller(void){
       }
   }
 }
+
+
+String getJsonDht(void){
+  return "{\"temperature\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
+}
+
+String getJsonPir(void){
+  return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"}";
+}
+
+String getJson(void){
+  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+"}";
+}
+
+#include "homepage_template.h"
 
 void view(void){
   if(server.arg("format")=="json"){
