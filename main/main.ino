@@ -106,27 +106,19 @@ void dump(decode_results *results) {
 void setRitterGroup(int state)
 {
   transmitter.sendGroup(state);
-  Serial.print("The state \"");
-  Serial.print(state);
-  Serial.print("\" was send to the group \"");
-  Serial.print(ritter_group_address);
-  Serial.println("\".");
+  Serial.print("The state \"" + String(state,BIN) + "\" was send to the group \"" + String(ritter_group_address,DEC) + "\".");
 }
 
 // Switchs one plug on
 void setRitterSwitch(int unit, int state)
 {
   transmitter.sendUnit(unit, state);
-  Serial.print("The state \"");
-  Serial.print(state);
-  Serial.print("\" was send to the switch \"");
-  Serial.print(unit);
-  Serial.println("\".");
+  Serial.print("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
 }
 
-void setIrColor() {
-  uint32_t code = strtoul(server.arg("code").c_str(), NULL, 10);
-  irsend.sendNEC(code, 32);
+void setIrColor(decode_type_t type,int data, int bits) {
+  // irsend.send(type, data, bits);
+  Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\"was send in format \"" + getDecodeType(type) + "\".");
 }
 
 String getJsonDht(void){
@@ -150,20 +142,31 @@ bool isParameterDefined(String parameter_name){
   return false;
 }
 
-void handleRequest(void){
-  Serial.println("Website was called.");
-  if(isParameterDefined("plug_id") && isParameterDefined("status")){
-    if(server.arg("plug_id")=="group"){
-      setRitterGroup(server.arg("status").toInt());
-    }else{
-      setRitterSwitch(server.arg("plug_id").toInt(),server.arg("status").toInt());
-    }
+void controller(void){
+  if(isParameterDefined("ir_code") && isParameterDefined("ir_decode_type") && isParameterDefined("ir_data")){
+    setIrColor(static_cast<decode_type_t>(server.arg("ir_decode_type").toInt()),server.arg("ir_data").toInt(),server.arg("ir_bits").toInt());
   }
+  if(isParameterDefined("plug_id") && isParameterDefined("status")){
+      if(server.arg("plug_id")=="group"){
+        setRitterGroup(server.arg("status").toInt());
+      }else{
+        setRitterSwitch(server.arg("plug_id").toInt(),server.arg("status").toInt());
+      }
+  }
+}
+
+void view(void){
   if(server.arg("format")=="json"){
     server.send ( 200, "text/html", getJson());
   }else{
     server.send ( 200, "text/html", homepage_template());
   }
+}
+
+void handleRequest(void){
+  Serial.println("Website was called.");
+  controller();
+  view();
   delay(100);
 }
 
