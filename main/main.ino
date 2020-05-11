@@ -44,6 +44,7 @@ int last_recieved_ir_data;
 int last_recieved_ir_bits;
 
 // Setup classes
+MDNSResponder mdns;
 ESP8266WebServer server ( 80 );
 NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
 DHT dht(pin_tmp, DHT11);
@@ -87,28 +88,7 @@ void dump(decode_results *results) {
   last_recieved_ir_type = results->decode_type;
   last_recieved_ir_data = results->value;
   last_recieved_ir_bits = results->bits;
-  uint16_t count = results->rawlen;
-  Serial.print(getDecodeType(results->decode_type));
-  serialPrintUint64(results->value, 16);
-  Serial.print(" (");
-  Serial.print(results->bits, DEC);
-  Serial.println(" bits)");
-  Serial.print("Raw (");
-  Serial.print(count);
-  Serial.print("): ");
-
-  for (uint16_t i = 1; i < count; i++) {
-    if (i % 100 == 0)
-      yield();  // Preemptive yield every 100th entry to feed the WDT.
-    if (i & 1) {
-      Serial.print(results->rawbuf[i] * RAWTICK, DEC);
-    } else {
-      Serial.write('-');
-      Serial.print((uint32_t) results->rawbuf[i] * RAWTICK, DEC);
-    }
-    Serial.print(" ");
-  }
-  Serial.println();
+  Serial.println(getJsonIrLastRecieved());
 }
 
 // Switchs the whole group on
@@ -125,9 +105,9 @@ void setRitterSwitch(int unit, int state)
   Serial.print("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
 }
 
-void setIrColor(decode_type_t type,int data, int bits) {
-  irsend.send(type, data, bits);
-  Serial.print("The code \"" + String(data) + "\" with \"" + String(bits) + "\" was send in format \"" + getDecodeType(type) + "\".");
+void setIrColor(decode_type_t type,uint32_t code, uint16_t bits) {
+  irsend.send(type, code, bits);
+  Serial.print("The code \"" + String(code) + "\" with \"" + String(bits) + "\" bits was send in format \"" + getDecodeType(type) + "\".");
 }
 
 bool isParameterDefined(String parameter_name){
@@ -144,7 +124,7 @@ void controller(void){
     setIrColor(static_cast<decode_type_t>(server.arg(parameter_ir_type).toInt()),server.arg(parameter_ir_data).toInt(),server.arg(parameter_ir_bits).toInt());
   }
   if(isParameterDefined(parameter_plug_id) && isParameterDefined(parameter_plug_status)){
-      if(server.arg(parameter_plug_id)=="group"){
+      if(server.arg(parameter_plug_id)=="0"){
         setRitterGroup(server.arg(parameter_plug_status).toInt());
       }else{
         setRitterSwitch(server.arg(parameter_plug_id).toInt(),server.arg(parameter_plug_status).toInt());
@@ -161,12 +141,12 @@ String getJsonPir(void){
   return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"}";
 }
 
-String getJsonIr(void){
+String getJsonIrLastRecieved(void){
   return "{\"last_recieved\":{\"bits\":\""+String(last_recieved_ir_bits)+"\",\"type\":\""+String(last_recieved_ir_type)+"\",\"data\":\""+String(last_recieved_ir_data)+"\"}}";
 }
 
 String getJson(void){
-  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+"}";
+  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIrLastRecieved())+"}";
 }
 
 #include "homepage_template.h"
@@ -190,6 +170,10 @@ void handleRequest(void){
 void setup(void)
 {
   pinMode(pin_pir, INPUT);
+  Serial.println("Enable IR-reciever.");
+  irrecv.enableIRIn();
+  Serial.println("Enable IR-sender.");
+  irsend.begin();
   Serial.begin(9600);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
@@ -200,11 +184,12 @@ void setup(void)
   }
   Serial.println("Connected to :" + String(ssid));
   Serial.println("IP address: " + WiFi.localIP());
+  if (mdns.begin(hostname, WiFi.localIP())) {
+    Serial.println("MDNS responder started.");
+  }
   server.onNotFound(handleRequest);
   server.begin();
   Serial.println("HTTP server started.");
-  Serial.println("Enable IR-Reciever.");
-  irrecv.enableIRIn();
   delay(1000);
 }
 
