@@ -35,7 +35,8 @@ const char* parameter_plug_status="plug_status";
 const char* parameter_ir_type="ir_type";
 const char* parameter_ir_data="ir_data";
 const char* parameter_ir_bits="ir_bits";
-const char* parameter_list[]={parameter_plug_id,parameter_plug_status,parameter_ir_type,parameter_ir_data,parameter_ir_bits};
+const char* parameter_delay_time_in_ms="delay_time_in_ms";
+const char* parameter_list[]={parameter_plug_id,parameter_plug_status,parameter_ir_type,parameter_ir_data,parameter_ir_bits,parameter_delay_time_in_ms};
 
 // Define variables
 decode_results results;
@@ -159,11 +160,22 @@ void view(void){
   }
 }
 
+int getDelayTime(void){
+  if(isParameterDefined(parameter_delay_time_in_ms)){
+      int delay_time_in_ms = server.arg(parameter_delay_time_in_ms).toInt();
+      if(delay_time_in_ms>0){
+        Serial.println("Applying delay time: " + server.arg(parameter_delay_time_in_ms) + "ms");
+        return delay_time_in_ms;
+      }
+  }
+  return 0;
+}
+
 void handleRequest(void){
   Serial.println("Website was called.");
+  delay(getDelayTime());
   controller();
   view();
-  delay(100);
 }
 
 //Arduino-Setup
