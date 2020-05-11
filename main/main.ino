@@ -29,8 +29,13 @@ NewRemoteTransmitter transmitter(ritter_group_address, pin_ritter);
 DHT dht(pin_tmp, DHT11);
 IRrecv irrecv(pin_ir_reciever);
 
-String getDecodeType(decode_results *results){
-  switch(results->decode_type){
+/**
+ * Associative Arrays aren't possible in C++ because of Memory.
+ * For this reason it's necessary to implement the function like this.
+ * If you get the return value "UNKNOWN", adapt the return values to the ones in decode_type_t defined in IRremoteESP8266.h
+ **/
+String getDecodeType(decode_type_t decode_type){
+  switch(decode_type){
       case NEC:
         return String("NEC");
       case SONY:
@@ -44,7 +49,7 @@ String getDecodeType(decode_results *results){
       case RCMM:
         return String("RCMM");
       case PANASONIC:
-        return String("PANASONIC" + results->address + HEX);
+        return String("PANASONIC");
       case LG:
         return String("LG");
       case JVC:
@@ -59,7 +64,7 @@ String getDecodeType(decode_results *results){
 
 void dump(decode_results *results) {
   uint16_t count = results->rawlen;
-  Serial.print(getDecodeType(results));
+  Serial.print(getDecodeType(results->decode_type));
   serialPrintUint64(results->value, 16);
   Serial.print(" (");
   Serial.print(results->bits, DEC);
