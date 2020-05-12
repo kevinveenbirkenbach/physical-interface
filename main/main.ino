@@ -125,9 +125,9 @@ void controller(void){
     setIrColor(static_cast<decode_type_t>(server.arg(parameter_ir_type).toInt()),server.arg(parameter_ir_data).toInt(),server.arg(parameter_ir_bits).toInt());
   }
   if(isParameterDefined(parameter_plug_id) && isParameterDefined(parameter_plug_status)){
-      if(server.arg(parameter_plug_id)=="0"){
+      if(server.arg(parameter_plug_id)=="group"){
         setRitterGroup(server.arg(parameter_plug_status).toInt());
-      }else{
+      }else if(server.arg(parameter_plug_id).toInt()>0){
         setRitterSwitch(server.arg(parameter_plug_id).toInt(),server.arg(parameter_plug_status).toInt());
       }
   }
@@ -195,7 +195,8 @@ void setup(void)
       delay(500);
   }
   Serial.println("Connected to :" + String(ssid));
-  Serial.println("IP address: " + WiFi.localIP());
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
   if (mdns.begin(hostname, WiFi.localIP())) {
     Serial.println("MDNS responder started.");
   }
