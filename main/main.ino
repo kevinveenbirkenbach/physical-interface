@@ -144,7 +144,8 @@ String getJsonPir(void){
 }
 
 String getJsonLdr(void){
-  return "{\"relative\":\""+String(analogRead (pin_ldr))+"\"}";
+  float volt = 5.0 /1024.0 * analogRead (pin_ldr);
+  return "{\"input_volt\":\""+String(volt)+"\"}";
 }
 
 String getJsonIrLastRecieved(void){
