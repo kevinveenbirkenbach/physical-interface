@@ -29,6 +29,7 @@ const int pin_pir  = 14;
 const int pin_tmp  = 12;
 const uint16_t pin_ir_reciever = 2;
 const uint16_t pin_ir_send = 4;
+const uint16_t pin_ldr  = A0;
 const unsigned long ritter_group_address = 13043702;
 const char* parameter_plug_id="plug_id";
 const char* parameter_plug_status="plug_status";
@@ -135,11 +136,15 @@ void controller(void){
 
 
 String getJsonDht(void){
-  return "{\"temperature\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
+  return "{\"temperature_celcius\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
 }
 
 String getJsonPir(void){
   return "{\"motion\":\""+String(digitalRead(pin_pir))+"\"}";
+}
+
+String getJsonLdr(void){
+  return "{\"relative\":\""+String(analogRead (pin_ldr))+"\"}";
 }
 
 String getJsonIrLastRecieved(void){
@@ -147,7 +152,7 @@ String getJsonIrLastRecieved(void){
 }
 
 String getJson(void){
-  return "{\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIrLastRecieved())+"}";
+  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIrLastRecieved())+"}";
 }
 
 #include "homepage_template.h"
