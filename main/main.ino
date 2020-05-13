@@ -24,20 +24,22 @@
 #include "config.h"
 
 // Define Constants
-const int pin_ritter = 13;
-const int pin_pir  = 14;
-const int pin_tmp  = 12;
+const uint16_t pin_ritter = 13;
+const uint16_t pin_pir  = 14;
+const uint16_t pin_tmp  = 12;
 const uint16_t pin_ir_reciever = 2;
 const uint16_t pin_ir_send = 4;
 const uint16_t pin_ldr  = A0;
+const uint16_t pin_active_buzzer  = D5;
 const unsigned long ritter_group_address = 13043702;
 const char* parameter_plug_id="plug_id";
 const char* parameter_plug_status="plug_status";
 const char* parameter_ir_type="ir_type";
-const char* parameter_ir_data="ir_data";
+const char* parameter_ir_data="ir_code";
 const char* parameter_ir_bits="ir_bits";
 const char* parameter_delay_time_in_ms="delay_time_in_ms";
-const char* parameter_list[]={parameter_plug_id,parameter_plug_status,parameter_ir_type,parameter_ir_data,parameter_ir_bits,parameter_delay_time_in_ms};
+const char* parameter_sound_time_in_ms="sound_time_in_ms";
+const char* parameter_list[]={parameter_plug_id,parameter_plug_status,parameter_ir_type,parameter_ir_data,parameter_ir_bits,parameter_delay_time_in_ms,parameter_sound_time_in_ms};
 
 // Define variables
 decode_results results;
@@ -53,39 +55,6 @@ DHT dht(pin_tmp, DHT11);
 IRrecv irrecv(pin_ir_reciever);
 IRsend irsend(pin_ir_send);
 
-/**
- * Associative Arrays aren't possible in C++ because of Memory.
- * For this reason it's necessary to implement the function like this.
- * If you get the return value "UNKNOWN", adapt the return values to the ones in decode_type_t defined in IRremoteESP8266.h
- **/
-String getDecodeType(decode_type_t decode_type){
-  switch(decode_type){
-      case NEC:
-        return String("NEC");
-      case SONY:
-        return String("SONY");
-      case RC5:
-        return String("RC5");
-      case RC5X:
-        return String("RC5X");
-      case RC6:
-        return String("RC6");
-      case RCMM:
-        return String("RCMM");
-      case PANASONIC:
-        return String("PANASONIC");
-      case LG:
-        return String("LG");
-      case JVC:
-        return String("JVC");
-      case AIWA_RC_T501:
-        return String("AIWA_RC_T501");
-      case WHYNTER:
-        return String("WHYNTER");
-  }
-  return String("UNKNOWN");
-}
-
 void dump(decode_results *results) {
   last_recieved_ir_type = results->decode_type;
   last_recieved_ir_data = results->value;
@@ -97,19 +66,28 @@ void dump(decode_results *results) {
 void setRitterGroup(int state)
 {
   transmitter.sendGroup(state);
-  Serial.print("The state \"" + String(state,BIN) + "\" was send to the group \"" + String(ritter_group_address,DEC) + "\".");
+  Serial.println("The state \"" + String(state,BIN) + "\" was send to the group \"" + String(ritter_group_address,DEC) + "\".");
 }
 
 // Switchs one plug on
 void setRitterSwitch(int unit, int state)
 {
   transmitter.sendUnit(unit, state);
-  Serial.print("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
+  Serial.println("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
 }
 
 void setIrColor(decode_type_t type,uint32_t code, uint16_t bits) {
   irsend.send(type, code, bits);
-  Serial.print("The code \"" + String(code) + "\" with \"" + String(bits) + "\" bits was send in format \"" + getDecodeType(type) + "\".");
+  Serial.println("The code \"" + String(code) + "\" with \"" + String(bits) + "\" bits was send in format \"" + String(type) + "\".");
+}
+
+void setSound(int time_in_ms){
+  Serial.println("Making sound for \"" + String(time_in_ms) + "ms.");
+  pinMode(pin_active_buzzer,OUTPUT);
+  digitalWrite(pin_active_buzzer,LOW);
+  delay(time_in_ms);
+  digitalWrite(pin_active_buzzer,HIGH);
+  pinMode(pin_active_buzzer,INPUT);
 }
 
 bool isParameterDefined(String parameter_name){
@@ -122,6 +100,9 @@ bool isParameterDefined(String parameter_name){
 }
 
 void controller(void){
+  if(isParameterDefined(parameter_sound_time_in_ms)){
+    setSound(server.arg(parameter_sound_time_in_ms).toInt());
+  }
   if(isParameterDefined(parameter_ir_type) && isParameterDefined(parameter_ir_data) && isParameterDefined(parameter_ir_bits)){
     setIrColor(static_cast<decode_type_t>(server.arg(parameter_ir_type).toInt()),server.arg(parameter_ir_data).toInt(),server.arg(parameter_ir_bits).toInt());
   }
@@ -192,6 +173,8 @@ void setup(void)
   irrecv.enableIRIn();
   Serial.println("Enable IR-sender.");
   irsend.begin();
+  Serial.println("Activate active buzzer.");
+  setSound(1);
   Serial.begin(9600);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
@@ -204,7 +187,7 @@ void setup(void)
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   if (mdns.begin(hostname, WiFi.localIP())) {
-    Serial.println("MDNS responder started.");
+    Serial.println("MDNS responder started. Using \"" + String(hostname) + "\" as hostname.");
   }
   server.onNotFound(handleRequest);
   server.begin();
