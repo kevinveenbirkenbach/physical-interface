@@ -13,13 +13,15 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <NewRemoteTransmitter.h>
+#include <NewRemoteReceiver.h>
 #include <DHT.h>
 #include "config.h"
 
 /**
  * Define constants
  */
-const uint16_t PIN_RITTER = 13;
+const uint16_t PIN_REMOTE_RECIEVER = 13;
+const uint16_t PIN_REMOTE_TRANSMITTER = 15;
 const uint16_t PIN_PIR  = 14;
 const uint16_t PIN_DHT  = 12;
 const uint16_t PIN_IR_RECIEVER = 2;
@@ -43,13 +45,18 @@ decode_results results;
 decode_type_t last_recieved_ir_type;
 int last_recieved_ir_code;
 int last_recieved_ir_bits;
+unsigned int last_recieved_radio_period;
+unsigned long last_recieved_radio_address;
+unsigned long last_recieved_radio_groupBit;
+unsigned long last_recieved_radio_unit;
+unsigned long last_recieved_radio_switchType;
 
 /**
  * Setup classes
  */
 MDNSResponder mdns;
 ESP8266WebServer server ( 80 );
-NewRemoteTransmitter transmitter(RITTER_STANDART_GROUP_ADDRESS, PIN_RITTER);
+NewRemoteTransmitter transmitter(RITTER_STANDART_GROUP_ADDRESS, PIN_REMOTE_RECIEVER);
 DHT dht(PIN_DHT, DHT11);
 IRrecv irrecv(PIN_IR_RECIEVER);
 IRsend irsend(PIN_IR_SEND);
@@ -62,6 +69,15 @@ void setRecievedIr(decode_results *results) {
   last_recieved_ir_code = results->value;
   last_recieved_ir_bits = results->bits;
   Serial.println("The code \"" + String(last_recieved_ir_code) + "\" was send for type \"" + String(results->decode_type,DEC) + "\" with  \"" + String(results->bits,DEC) + "\" bits.");
+}
+
+void setLastRecievedRadio(unsigned int period, unsigned long address, unsigned long groupBit, unsigned long unit, unsigned long switchType){
+    last_recieved_radio_period=period;
+    last_recieved_radio_address=address;
+    last_recieved_radio_groupBit=groupBit;
+    last_recieved_radio_unit=unit;
+    last_recieved_radio_switchType=switchType;
+    Serial.println("Recieved radio code with the following values: address \"" + String(address)  + "\", period \"" + String(period)  + "\", unit \"" + String(unit)  + "\", group bit \"" + String(groupBit)  + "\" and switch type \"" + String(switchType) + "\".");
 }
 
 /**
@@ -152,6 +168,10 @@ String getJsonDht(void){
   return "{\"temperature_celcius\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
 }
 
+String getJsonRadio(void){
+  return "{\"last_recieved\":{\"period\":\""+String(last_recieved_radio_period)+"\",\"address\":\""+String(last_recieved_radio_address)+"\",\"group_bit\":\""+String(last_recieved_radio_groupBit)+"\",\"unit\":\""+String(last_recieved_radio_unit)+"\",\"switch_type\":\""+String(last_recieved_radio_switchType)+"\"}}";
+}
+
 String getJsonPir(void){
   return "{\"motion\":\""+String(digitalRead(PIN_PIR))+"\"}";
 }
@@ -161,12 +181,12 @@ String getJsonLdr(void){
   return "{\"input_volt\":\""+String(volt)+"\"}";
 }
 
-String getJsonIrLastRecieved(void){
+String getJsonIr(void){
   return "{\"last_recieved\":{\"bits\":\""+String(last_recieved_ir_bits)+"\",\"type\":\""+String(last_recieved_ir_type)+"\",\"data\":\""+String(last_recieved_ir_code)+"\"}}";
 }
 
 String getJson(void){
-  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIrLastRecieved())+"}";
+  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+",\"radio\":"+String(getJsonRadio())+"}";
 }
 
 #include "homepage_template.h"
@@ -200,14 +220,17 @@ void handleRequest(void){
 //Arduino-Setup
 void setup(void)
 {
+  Serial.begin(9600);
+  Serial.println("Activate active buzzer.");
+  switchSound(true);
+  Serial.println("Enable PIR.");
   pinMode(PIN_PIR, INPUT);
+  Serial.println("Enable remote transmitter.");
+  NewRemoteReceiver::init(PIN_REMOTE_TRANSMITTER, 1, setLastRecievedRadio);
   Serial.println("Enable IR-reciever.");
   irrecv.enableIRIn();
   Serial.println("Enable IR-sender.");
   irsend.begin();
-  Serial.println("Activate active buzzer.");
-  switchSound(true);
-  Serial.begin(9600);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
   WiFi.begin(ssid, password);
