@@ -20,15 +20,16 @@
 /**
  * Define constants
  */
-const uint16_t PIN_REMOTE_RECIEVER = 13;
-const uint16_t PIN_REMOTE_TRANSMITTER = 15;
+const uint16_t PIN_RADIO_TRANSMITTER = 13;
+const uint16_t PIN_RADIO_RECIEVER = 15;
 const uint16_t PIN_PIR  = 14;
 const uint16_t PIN_DHT  = 12;
 const uint16_t PIN_IR_RECIEVER = 2;
 const uint16_t PIN_IR_SEND = 4;
 const uint16_t PIN_LDR  = A0;
 const uint16_t PIN_ACTIVE_BUZZER  = D5;
-const unsigned long RITTER_STANDART_GROUP_ADDRESS = 13043702;
+
+const char* PARAMETER_PLUG_ADDRESS="plug_address";
 const char* PARAMETER_PLUG_ID="plug_id";
 const char* PARAMETER_PLUG_STATUS="plug_enabled";
 const char* PARAMETER_IR_TYPE="ir_type";
@@ -36,7 +37,7 @@ const char* PARAMETER_IR_CODE="ir_code";
 const char* PARAMETER_IR_BITS="ir_bits";
 const char* PARAMETER_PRE_DELAY_TIME_IN_MS="pre_delay_time_in_ms";
 const char* PARAMETER_SOUND="sound_enabled";
-const char* PARAMETER_LIST[]={PARAMETER_PLUG_ID,PARAMETER_PLUG_STATUS,PARAMETER_IR_TYPE,PARAMETER_IR_CODE,PARAMETER_IR_BITS,PARAMETER_PRE_DELAY_TIME_IN_MS,PARAMETER_SOUND};
+const char* PARAMETER_LIST[]={PARAMETER_PLUG_ADDRESS,PARAMETER_PLUG_ID,PARAMETER_PLUG_STATUS,PARAMETER_IR_TYPE,PARAMETER_IR_CODE,PARAMETER_IR_BITS,PARAMETER_PRE_DELAY_TIME_IN_MS,PARAMETER_SOUND};
 
 /**
  * Define variables
@@ -56,7 +57,6 @@ unsigned long last_recieved_radio_switchType;
  */
 MDNSResponder mdns;
 ESP8266WebServer server ( 80 );
-NewRemoteTransmitter transmitter(RITTER_STANDART_GROUP_ADDRESS, PIN_REMOTE_RECIEVER);
 DHT dht(PIN_DHT, DHT11);
 IRrecv irrecv(PIN_IR_RECIEVER);
 IRsend irsend(PIN_IR_SEND);
@@ -83,13 +83,13 @@ void setLastRecievedRadio(unsigned int period, unsigned long address, unsigned l
 /**
  * Transmitter functions
  */
-void sendRemoteGroupSignal(boolean state)
+void sendRemoteGroupSignal(boolean state, NewRemoteTransmitter transmitter)
 {
   transmitter.sendGroup(state);
-  Serial.println("The state \"" + String(state,BIN) + "\" was send to the group \"" + String(RITTER_STANDART_GROUP_ADDRESS,DEC) + "\".");
+  Serial.println("The state \"" + String(state,BIN) + "\" was send to the group.");
 }
 
-void sendRemoteUnitSignal(int unit, boolean state)
+void sendRemoteUnitSignal(int unit, boolean state, NewRemoteTransmitter transmitter)
 {
   transmitter.sendUnit(unit, state);
   Serial.println("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
@@ -138,6 +138,10 @@ String getParameterType(const char* parameter){
     return "integer";
   }
 
+  if(parameter==PARAMETER_PLUG_ADDRESS){
+    return "long";
+  }
+
   if(
     parameter==PARAMETER_SOUND ||
     parameter==PARAMETER_PLUG_STATUS
@@ -153,11 +157,12 @@ void controller(void){
     sendIrCode(static_cast<decode_type_t>(server.arg(PARAMETER_IR_TYPE).toInt()),server.arg(PARAMETER_IR_CODE).toInt(),server.arg(PARAMETER_IR_BITS).toInt());
   }
   if(isParameterDefined(PARAMETER_PLUG_ID)){
-      if(server.arg(PARAMETER_PLUG_ID).equals("0")){
-        sendRemoteGroupSignal(server.arg(PARAMETER_PLUG_STATUS).equals("on"));
-      }else if(server.arg(PARAMETER_PLUG_ID).toInt()>0){
-        sendRemoteUnitSignal(server.arg(PARAMETER_PLUG_ID).toInt(),server.arg(PARAMETER_PLUG_STATUS).equals("on"));
-      }
+    NewRemoteTransmitter transmitter(server.arg(PARAMETER_PLUG_ADDRESS).toInt(), PIN_RADIO_TRANSMITTER);
+    if(server.arg(PARAMETER_PLUG_ID).equals("0")){
+      sendRemoteGroupSignal(server.arg(PARAMETER_PLUG_STATUS).equals("on"),transmitter);
+    }else if(server.arg(PARAMETER_PLUG_ID).toInt()>0){
+      sendRemoteUnitSignal(server.arg(PARAMETER_PLUG_ID).toInt(),server.arg(PARAMETER_PLUG_STATUS).equals("on"),transmitter);
+    }
   }
 }
 
@@ -226,7 +231,7 @@ void setup(void)
   Serial.println("Enable PIR.");
   pinMode(PIN_PIR, INPUT);
   Serial.println("Enable remote transmitter.");
-  NewRemoteReceiver::init(PIN_REMOTE_TRANSMITTER, 1, setLastRecievedRadio);
+  NewRemoteReceiver::init(PIN_RADIO_RECIEVER, 1, setLastRecievedRadio);
   Serial.println("Enable IR-reciever.");
   irrecv.enableIRIn();
   Serial.println("Enable IR-sender.");

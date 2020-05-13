@@ -36,7 +36,7 @@ String homepage_template(void){
             "<div class=\"form-group row\" >"
               "<label for=\""+ parameter +"\" class=\"col-sm-2 col-form-label\">"+ parameter +":</label>"
               "<div class=\"col-sm-10\" >"
-                "<input type=\"" + ((parameter_type=="integer") ? String("number") : String("text")) + "\" class= \"form-control\" id=\""+ parameter +"\" value=\"" +  server.arg(parameter) +"\" name=\""+ parameter +"\">"
+                "<input type=\"" + ((parameter_type=="integer" || parameter_type=="long") ? String("number") : String("text")) + "\" class= \"form-control\" id=\""+ parameter +"\" value=\"" +  server.arg(parameter) +"\" name=\""+ parameter +"\">"
               "</div>"
             "</div>";
           }
