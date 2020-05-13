@@ -67,13 +67,13 @@ void setRecievedIr(decode_results *results) {
 /**
  * Transmitter functions
  */
-void sendRemoteGroupSignal(int state)
+void sendRemoteGroupSignal(boolean state)
 {
   transmitter.sendGroup(state);
   Serial.println("The state \"" + String(state,BIN) + "\" was send to the group \"" + String(RITTER_STANDART_GROUP_ADDRESS,DEC) + "\".");
 }
 
-void sendRemoteUnitSignal(int unit, int state)
+void sendRemoteUnitSignal(int unit, boolean state)
 {
   transmitter.sendUnit(unit, state);
   Serial.println("The state \"" + String(state,BIN) + "\" was send to the switch \"" + String(unit,DEC) + "\".");
@@ -87,13 +87,15 @@ void sendIrCode(decode_type_t type,uint32_t code, uint16_t bits) {
 /**
  * Actors
  */
-void makeSound(int time_in_ms){
-  Serial.println("Making sound for \"" + String(time_in_ms) + "ms.");
-  pinMode(PIN_ACTIVE_BUZZER,OUTPUT);
-  digitalWrite(PIN_ACTIVE_BUZZER,LOW);
-  delay(time_in_ms);
-  digitalWrite(PIN_ACTIVE_BUZZER,HIGH);
-  pinMode(PIN_ACTIVE_BUZZER,INPUT);
+void switchSound(boolean status){
+  Serial.println("Switching sound \"" + String((status)?("on"):("off")) + ".");
+  if(status){
+    pinMode(PIN_ACTIVE_BUZZER,OUTPUT);
+    digitalWrite(PIN_ACTIVE_BUZZER,LOW);
+  }else{
+    digitalWrite(PIN_ACTIVE_BUZZER,HIGH);
+    pinMode(PIN_ACTIVE_BUZZER,INPUT);
+  }
 }
 
 /**
@@ -130,17 +132,15 @@ String getParameterType(const char* parameter){
 }
 
 void controller(void){
-  if(isParameterDefined(PARAMETER_SOUND)){
-    makeSound(server.arg(PARAMETER_SOUND).toInt());
-  }
+  switchSound(server.arg(PARAMETER_SOUND).equals("on"));
   if(isParameterDefined(PARAMETER_IR_TYPE) && isParameterDefined(PARAMETER_IR_CODE) && isParameterDefined(PARAMETER_IR_BITS)){
     sendIrCode(static_cast<decode_type_t>(server.arg(PARAMETER_IR_TYPE).toInt()),server.arg(PARAMETER_IR_CODE).toInt(),server.arg(PARAMETER_IR_BITS).toInt());
   }
-  if(isParameterDefined(PARAMETER_PLUG_ID) && isParameterDefined(PARAMETER_PLUG_STATUS)){
-      if(server.arg(PARAMETER_PLUG_ID)=="group"){
-        sendRemoteGroupSignal(server.arg(PARAMETER_PLUG_STATUS).toInt());
+  if(isParameterDefined(PARAMETER_PLUG_ID)){
+      if(server.arg(PARAMETER_PLUG_ID).equals("0")){
+        sendRemoteGroupSignal(server.arg(PARAMETER_PLUG_STATUS).equals("on"));
       }else if(server.arg(PARAMETER_PLUG_ID).toInt()>0){
-        sendRemoteUnitSignal(server.arg(PARAMETER_PLUG_ID).toInt(),server.arg(PARAMETER_PLUG_STATUS).toInt());
+        sendRemoteUnitSignal(server.arg(PARAMETER_PLUG_ID).toInt(),server.arg(PARAMETER_PLUG_STATUS).equals("on"));
       }
   }
 }
@@ -206,7 +206,7 @@ void setup(void)
   Serial.println("Enable IR-sender.");
   irsend.begin();
   Serial.println("Activate active buzzer.");
-  makeSound(1);
+  switchSound(true);
   Serial.begin(9600);
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
@@ -225,6 +225,7 @@ void setup(void)
   server.begin();
   Serial.println("HTTP server started.");
   delay(1000);
+  switchSound(false);
 }
 
 void loop()
