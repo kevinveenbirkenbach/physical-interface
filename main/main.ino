@@ -20,12 +20,12 @@
 /**
  * Define constants
  */
-const uint16_t PIN_RADIO_TRANSMITTER = 13;
-const uint16_t PIN_RADIO_RECIEVER = 15;
-const uint16_t PIN_PIR  = 14;
-const uint16_t PIN_DHT  = 12;
-const uint16_t PIN_IR_RECIEVER = 2;
-const uint16_t PIN_IR_SEND = 4;
+const uint16_t PIN_RADIO_TRANSMITTER = D7;
+const uint16_t PIN_RADIO_RECIEVER = D8;
+const uint16_t PIN_PIR  = D1;
+const uint16_t PIN_DHT  = D6;
+const uint16_t PIN_IR_RECIEVER = D4;
+const uint16_t PIN_IR_SEND = D2;
 const uint16_t PIN_LDR  = A0;
 const uint16_t PIN_ACTIVE_BUZZER  = D5;
 
@@ -152,7 +152,9 @@ String getParameterType(const char* parameter){
 }
 
 void controller(void){
-  switchSound(server.arg(PARAMETER_SOUND).equals("on"));
+  if(isParameterDefined(PARAMETER_SOUND)){
+    switchSound(server.arg(PARAMETER_SOUND).equals("on"));
+  }
   if(isParameterDefined(PARAMETER_IR_TYPE) && isParameterDefined(PARAMETER_IR_CODE) && isParameterDefined(PARAMETER_IR_BITS)){
     sendIrCode(static_cast<decode_type_t>(server.arg(PARAMETER_IR_TYPE).toInt()),server.arg(PARAMETER_IR_CODE).toInt(),server.arg(PARAMETER_IR_BITS).toInt());
   }
@@ -170,7 +172,11 @@ void controller(void){
  * Getter functions
  */
 String getJsonDht(void){
-  return "{\"temperature_celcius\":\""+String(dht.readTemperature())+"\",\"humidity\":\""+String(dht.readHumidity())+"\"}";
+  delay(600); // Somehow this delay is needed to don't get "nan" values
+  String temperature = String(dht.readTemperature());
+  delay(600); // Somehow this delay is needed to don't get "nan" values
+  String humidity    = String(dht.readHumidity());
+  return "{\"temperature_celcius\":\""+ temperature +"\",\"relative_humidity\":\""+humidity+"\"}";
 }
 
 String getJsonRadio(void){
@@ -178,12 +184,11 @@ String getJsonRadio(void){
 }
 
 String getJsonPir(void){
-  return "{\"motion\":\""+String(digitalRead(PIN_PIR))+"\"}";
+  return "{\"motion\":\""+String((digitalRead(PIN_PIR)==HIGH)?"true":"false")+"\"}";
 }
 
 String getJsonLdr(void){
-  float volt = 5.0 /1024.0 * analogRead (PIN_LDR);
-  return "{\"input_volt\":\""+String(volt)+"\"}";
+  return "{\"actual\":\""+String(analogRead (PIN_LDR))+"\",\"minimum\":\"0\",\"maximum\":\"1023\"}";
 }
 
 String getJsonIr(void){
@@ -226,8 +231,6 @@ void handleRequest(void){
 void setup(void)
 {
   Serial.begin(9600);
-  Serial.println("Activate active buzzer.");
-  switchSound(true);
   Serial.println("Enable PIR.");
   pinMode(PIN_PIR, INPUT);
   Serial.println("Enable remote transmitter.");
@@ -253,7 +256,9 @@ void setup(void)
   server.onNotFound(handleRequest);
   server.begin();
   Serial.println("HTTP server started.");
-  delay(1000);
+  Serial.println("Generate test sound.");
+  switchSound(true);
+  delay(200);
   switchSound(false);
 }
 
