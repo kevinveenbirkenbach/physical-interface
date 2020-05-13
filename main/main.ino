@@ -219,7 +219,8 @@ void setup(void)
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   if (mdns.begin(hostname, WiFi.localIP())) {
-    Serial.println("MDNS responder started. Using \"" + String(hostname) + "\" as hostname.");
+    Serial.println("MDNS responder started.");
+    Serial.println("Using \"" + String(hostname) + "\" as hostname.");
   }
   server.onNotFound(handleRequest);
   server.begin();
