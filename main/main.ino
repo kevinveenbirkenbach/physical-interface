@@ -28,6 +28,7 @@ const uint16_t PIN_IR_RECIEVER = D4;
 const uint16_t PIN_IR_SEND = D2;
 const uint16_t PIN_LDR  = A0;
 const uint16_t PIN_ACTIVE_BUZZER  = D5;
+const uint16_t PIN_SOIL_MOISTURE = D3;
 
 const char* PARAMETER_PLUG_ADDRESS="plug_address";
 const char* PARAMETER_PLUG_ID="plug_id";
@@ -57,9 +58,8 @@ unsigned long last_recieved_radio_switchType;
  */
 MDNSResponder mdns;
 ESP8266WebServer server ( 80 );
-DHT dht(PIN_DHT, DHT11);
 IRrecv irrecv(PIN_IR_RECIEVER);
-IRsend irsend(PIN_IR_SEND);
+
 
 /**
  * Setter functions
@@ -96,6 +96,9 @@ void sendRemoteUnitSignal(int unit, boolean state, NewRemoteTransmitter transmit
 }
 
 void sendIrCode(decode_type_t type,uint32_t code, uint16_t bits) {
+  Serial.println("Enable IR-sender.");
+  IRsend irsend(PIN_IR_SEND);
+  irsend.begin();
   irsend.send(type, code, bits);
   Serial.println("The code \"" + String(code) + "\" with \"" + String(bits) + "\" bits was send in format \"" + String(type) + "\".");
 }
@@ -172,6 +175,8 @@ void controller(void){
  * Getter functions
  */
 String getJsonDht(void){
+  Serial.println("Reading DHT...");
+  DHT dht(PIN_DHT, DHT11);
   delay(600); // Somehow this delay is needed to don't get "nan" values
   String temperature = String(dht.readTemperature());
   delay(600); // Somehow this delay is needed to don't get "nan" values
@@ -180,32 +185,46 @@ String getJsonDht(void){
 }
 
 String getJsonRadio(void){
+  Serial.println("Reading radio signal...");
   return "{\"last_recieved\":{\"period\":\""+String(last_recieved_radio_period)+"\",\"address\":\""+String(last_recieved_radio_address)+"\",\"group_bit\":\""+String(last_recieved_radio_groupBit)+"\",\"unit\":\""+String(last_recieved_radio_unit)+"\",\"switch_type\":\""+String(last_recieved_radio_switchType)+"\"}}";
 }
 
 String getJsonPir(void){
+  Serial.println("Reading PIR...");
+  pinMode(PIN_PIR, INPUT);
   return "{\"motion\":\""+String((digitalRead(PIN_PIR)==HIGH)?"true":"false")+"\"}";
 }
 
+String getJsonSoilMoisture(void){
+  Serial.println("Reading soil moisture...");
+  pinMode(PIN_SOIL_MOISTURE, INPUT);
+  return "{\"is_moist\":\""+String((digitalRead(PIN_SOIL_MOISTURE)==LOW)?"true":"false")+"\"}";
+}
+
 String getJsonLdr(void){
+  Serial.println("Reading LDR...");
   return "{\"actual\":\""+String(analogRead (PIN_LDR))+"\",\"minimum\":\"0\",\"maximum\":\"1023\"}";
 }
 
 String getJsonIr(void){
+  Serial.println("Reading infared signal...");
   return "{\"last_recieved\":{\"bits\":\""+String(last_recieved_ir_bits)+"\",\"type\":\""+String(last_recieved_ir_type)+"\",\"data\":\""+String(last_recieved_ir_code)+"\"}}";
 }
 
 String getJson(void){
-  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+",\"radio\":"+String(getJsonRadio())+"}";
+  Serial.println("Generating json...");
+  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+ ",\"soil_moisture\":"+String(getJsonSoilMoisture())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+",\"radio\":"+String(getJsonRadio())+"}";
 }
 
 #include "homepage_template.h"
 
 void view(void){
   if(server.arg("format")=="json"){
+    Serial.println("Json was called.");
     server.send ( 200, "text/html", getJson());
   }else{
-    server.send ( 200, "text/html", homepage_template());
+    Serial.println("Html was called.");
+    server.send ( 200, "application/json", homepage_template());
   }
 }
 
@@ -231,14 +250,10 @@ void handleRequest(void){
 void setup(void)
 {
   Serial.begin(9600);
-  Serial.println("Enable PIR.");
-  pinMode(PIN_PIR, INPUT);
   Serial.println("Enable remote transmitter.");
   NewRemoteReceiver::init(PIN_RADIO_RECIEVER, 1, setLastRecievedRadio);
   Serial.println("Enable IR-reciever.");
   irrecv.enableIRIn();
-  Serial.println("Enable IR-sender.");
-  irsend.begin();
   Serial.println("Started program.");
   //WiFi.softAPdisconnect(true);
   WiFi.begin(ssid, password);
