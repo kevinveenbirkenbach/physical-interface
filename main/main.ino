@@ -28,7 +28,6 @@ const uint16_t PIN_IR_RECIEVER = D4;
 const uint16_t PIN_IR_SEND = D2;
 const uint16_t PIN_LDR  = A0;
 const uint16_t PIN_ACTIVE_BUZZER  = D5;
-const uint16_t PIN_SOIL_MOISTURE = D3;
 
 const char* PARAMETER_PLUG_ADDRESS="plug_address";
 const char* PARAMETER_PLUG_ID="plug_id";
@@ -196,9 +195,21 @@ String getJsonPir(void){
 }
 
 String getJsonSoilMoisture(void){
-  Serial.println("Reading soil moisture...");
-  pinMode(PIN_SOIL_MOISTURE, INPUT);
-  return "{\"is_moist\":\""+String((digitalRead(PIN_SOIL_MOISTURE)==LOW)?"true":"false")+"\"}";
+  Serial.println("Reading soil moisture from PIN ...");
+  String moistures = "[";
+  int array_elements=(sizeof(PINS_SOIL_MOISTURE) / sizeof(uint16_t));
+  for (int index=0; index<array_elements; index++)
+  {
+    pinMode(PINS_SOIL_MOISTURE[index], INPUT);
+    moistures = moistures + "{"
+    "\"pin\":\"" + String(PINS_SOIL_MOISTURE[index]) + "\","
+    "\"is_moist\":\""+String((digitalRead(PINS_SOIL_MOISTURE[index])==LOW)?"true":"false")+"\""
+    "}";
+    if(index<(array_elements-1)){
+      moistures = moistures + ",";
+    }
+  }
+  return moistures + "]";
 }
 
 String getJsonLdr(void){
@@ -213,7 +224,14 @@ String getJsonIr(void){
 
 String getJson(void){
   Serial.println("Generating json...");
-  return "{\"LDR\":"+String(getJsonLdr())+",\"DHT\":"+String(getJsonDht())+ ",\"soil_moisture\":"+String(getJsonSoilMoisture())+",\"PIR\":"+String(getJsonPir())+",\"IR\":"+String(getJsonIr())+",\"radio\":"+String(getJsonRadio())+"}";
+  return "{"
+            "\"LDR\":"+String(getJsonLdr())+","
+            "\"DHT\":"+String(getJsonDht())+ ","
+            "\"soil_moisture\":"+String(getJsonSoilMoisture())+","
+            "\"PIR\":"+String(getJsonPir())+","
+            "\"IR\":"+String(getJsonIr())+","
+            "\"radio\":"+String(getJsonRadio())+
+          "}";
 }
 
 #include "homepage_template.h"
@@ -221,10 +239,10 @@ String getJson(void){
 void view(void){
   if(server.arg("format")=="json"){
     Serial.println("Json was called.");
-    server.send ( 200, "text/html", getJson());
+    server.send ( 200, "application/json", getJson());
   }else{
     Serial.println("Html was called.");
-    server.send ( 200, "application/json", homepage_template());
+    server.send ( 200, "text/html                           ", homepage_template());
   }
 }
 
