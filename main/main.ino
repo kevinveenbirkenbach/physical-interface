@@ -177,9 +177,9 @@ void controller(void){
 String getJsonDht(void){
   Serial.println("Reading DHT...");
   DHT dht(PIN_DHT, DHT11);
-  delay(600); // Somehow this delay is needed to don't get "nan" values
+  delay(800); // Somehow this delay is needed to don't get "nan" values
   String temperature = String(dht.readTemperature());
-  delay(600); // Somehow this delay is needed to don't get "nan" values
+  delay(800); // Somehow this delay is needed to don't get "nan" values
   String humidity    = String(dht.readHumidity());
   return "{\"temperature_celcius\":\""+ temperature +"\",\"relative_humidity\":\""+humidity+"\"}";
 }
