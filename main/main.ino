@@ -1,9 +1,7 @@
 /**
  * Loading classes
  */
-#ifndef UNIT_TEST
-  #include <Arduino.h>
-#endif
+#include <Arduino.h>
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
 #include <IRsend.h>
@@ -20,14 +18,7 @@
 /**
  * Define constants
  */
-const uint16_t PIN_RADIO_TRANSMITTER = D7;
-const uint16_t PIN_RADIO_RECIEVER = D8;
-const uint16_t PIN_PIR  = D1;
-const uint16_t PIN_DHT  = D6;
-const uint16_t PIN_IR_RECIEVER = D4;
-const uint16_t PIN_IR_SEND = D2;
-const uint16_t PIN_LDR  = A0;
-const uint16_t PIN_ACTIVE_BUZZER  = D5;
+const uint16_t NONE = 65535; // Used to define not activated pins.
 
 const char* PARAMETER_PLUG_ADDRESS="plug_address";
 const char* PARAMETER_PLUG_ID="plug_id";
@@ -58,7 +49,6 @@ unsigned long last_recieved_radio_switchType;
 MDNSResponder mdns;
 ESP8266WebServer server ( 80 );
 IRrecv irrecv(PIN_IR_RECIEVER);
-
 
 /**
  * Setter functions
