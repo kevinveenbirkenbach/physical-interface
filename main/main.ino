@@ -27,8 +27,8 @@ const char* PARAMETER_IR_TYPE="ir_type";
 const char* PARAMETER_IR_CODE="ir_code";
 const char* PARAMETER_IR_BITS="ir_bits";
 const char* PARAMETER_PRE_DELAY_TIME_IN_MS="pre_delay_time_in_ms";
-const char* PARAMETER_SOUND="sound_enabled";
-const char* PARAMETER_LIST[]={PARAMETER_PLUG_ADDRESS,PARAMETER_PLUG_ID,PARAMETER_PLUG_STATUS,PARAMETER_IR_TYPE,PARAMETER_IR_CODE,PARAMETER_IR_BITS,PARAMETER_PRE_DELAY_TIME_IN_MS,PARAMETER_SOUND};
+const char* PARAMETER_SIGNAL="signal";
+const char* PARAMETER_LIST[]={PARAMETER_PLUG_ADDRESS,PARAMETER_PLUG_ID,PARAMETER_PLUG_STATUS,PARAMETER_IR_TYPE,PARAMETER_IR_CODE,PARAMETER_IR_BITS,PARAMETER_PRE_DELAY_TIME_IN_MS,PARAMETER_SIGNAL};
 
 /**
  * Define variables
@@ -95,14 +95,14 @@ void sendIrCode(decode_type_t type,uint32_t code, uint16_t bits) {
 /**
  * Actors
  */
-void switchSound(boolean status){
-  Serial.println("Switching sound \"" + String((status)?("on"):("off")) + ".");
+void switchSignal(boolean status){
+  Serial.println("Switching signal\"" + String((status)?("on"):("off")) + ".");
   if(status){
-    pinMode(PIN_ACTIVE_BUZZER,OUTPUT);
-    digitalWrite(PIN_ACTIVE_BUZZER,LOW);
+    pinMode(PIN_SIGNAL,OUTPUT);
+    digitalWrite(PIN_SIGNAL,LOW);
   }else{
-    digitalWrite(PIN_ACTIVE_BUZZER,HIGH);
-    pinMode(PIN_ACTIVE_BUZZER,INPUT);
+    digitalWrite(PIN_SIGNAL,HIGH);
+    pinMode(PIN_SIGNAL,INPUT);
   }
 }
 
@@ -135,7 +135,7 @@ String getParameterType(const char* parameter){
   }
 
   if(
-    parameter==PARAMETER_SOUND ||
+    parameter==PARAMETER_SIGNAL ||
     parameter==PARAMETER_PLUG_STATUS
   ){
     return "boolean";
@@ -144,8 +144,8 @@ String getParameterType(const char* parameter){
 }
 
 void controller(void){
-  if(isParameterDefined(PARAMETER_SOUND)){
-    switchSound(server.arg(PARAMETER_SOUND).equals("on"));
+  if(isParameterDefined(PARAMETER_SIGNAL)){
+    switchSignal(server.arg(PARAMETER_SIGNAL).equals("on"));
   }
   if(isParameterDefined(PARAMETER_IR_TYPE) && isParameterDefined(PARAMETER_IR_CODE) && isParameterDefined(PARAMETER_IR_BITS)){
     sendIrCode(static_cast<decode_type_t>(server.arg(PARAMETER_IR_TYPE).toInt()),server.arg(PARAMETER_IR_CODE).toInt(),server.arg(PARAMETER_IR_BITS).toInt());
@@ -279,10 +279,10 @@ void setup(void)
   server.onNotFound(handleRequest);
   server.begin();
   Serial.println("HTTP server started.");
-  Serial.println("Generate test sound.");
-  switchSound(true);
+  Serial.println("Generate test signal.");
+  switchSignal(true);
   delay(200);
-  switchSound(false);
+  switchSignal(false);
 }
 
 void loop()

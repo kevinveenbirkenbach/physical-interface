@@ -7,13 +7,14 @@ const char* hostname = "physical-interface";
 
 /**
  * Pin layout
+ * I recommend to don't use D10, D9 and D0
  */
-const uint16_t PIN_RADIO_TRANSMITTER = D7;
-const uint16_t PIN_RADIO_RECIEVER = D8;
-const uint16_t PIN_PIR  = D1;
-const uint16_t PIN_DHT  = D6;
-const uint16_t PIN_IR_RECIEVER = D4;
-const uint16_t PIN_IR_SEND = D2;
+const uint16_t PIN_RADIO_TRANSMITTER = D5;
+const uint16_t PIN_RADIO_RECIEVER = D4;
+const uint16_t PIN_PIR  = D8;
+const uint16_t PIN_DHT  = D7;
+const uint16_t PIN_IR_RECIEVER = D1;
+const uint16_t PIN_IR_SEND = D6;
 const uint16_t PIN_LDR  = A0;
-const uint16_t PIN_ACTIVE_BUZZER  = D5;
-const uint16_t PINS_SOIL_MOISTURE[] = {D3,D9,D10};
+const uint16_t PIN_SIGNAL  = D2;
+const uint16_t PINS_SOIL_MOISTURE[] = {};
